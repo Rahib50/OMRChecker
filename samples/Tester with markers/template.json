@@ -1,0 +1,15 @@
+{
+  "pageDimensions": [ 1800, 2400],
+  "bubbleDimensions": [ 20, 20 ],
+  "customLabels": {},
+  "fieldBlocks": {
+    "MCQBlock1_20": {
+      "fieldType": "QTYPE_MCQ5",
+      "origin": [ 0, 0 ],
+      "fieldLabels": ["q1..20"],
+      "bubblesGap": 1,
+      "labelsGap": 30
+    }
+  },
+  "preProcessors": []
+}
