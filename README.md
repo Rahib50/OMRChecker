@@ -200,6 +200,40 @@ Alternatively you can also use `python3 main.py -i ./samples/sample1`.
 
 Each example in the samples folder demonstrates different ways in which OMRChecker can be used.
 
+### Screen Configuration for Template Layout Windows
+
+When using the `--setLayout` flag to view template layouts, the windows should automatically fit your screen. However, if you experience issues with window sizing or positioning, you can create a custom configuration:
+
+1. **Automatic Configuration (Recommended):**
+   ```bash
+   python3 create_screen_config.py
+   ```
+   This script will detect your screen size and create an optimized `config.json` file.
+
+2. **Manual Configuration:**
+   Create a `config.json` file in your input directory with:
+   ```json
+   {
+     "dimensions": {
+       "display_width": 1200,
+       "display_height": 800,
+       "processing_height": 820,
+       "processing_width": 666
+     },
+     "outputs": {
+       "show_image_level": 5
+     }
+   }
+   ```
+   Adjust `display_width` and `display_height` to match your screen size (typically 80% of your screen width and 70% of height).
+
+3. **Use the configuration:**
+   ```bash
+   python3 main.py --setLayout
+   ```
+
+The template layout windows will now be properly sized and centered on your screen.
+
 ### Common Issues
 
 <details>
