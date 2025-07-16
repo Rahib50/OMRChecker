@@ -1,0 +1,182 @@
+OMRChecker: Technical Overview & Customization Guide
+
+Overview
+--------
+OMRChecker is a robust, fast, and highly customizable Optical Mark Recognition (OMR) software designed to process and evaluate OMR sheets from scanned images or mobile photos. It supports a wide range of layouts, is resilient to various image qualities and angles, and provides rich visual feedback for debugging and configuration.
+
+Key Features
+- High Accuracy: Nearly 100% on high-quality scans, ~90% on mobile images.
+- Robustness: Handles low-resolution, xeroxed, and colored sheets.
+- Speed: Processes up to 200 OMRs per minute.
+- Customizability: Easily adapts to new OMR layouts via JSON templates.
+- Visual Debugging: Step-by-step visualizations and CSV output.
+- Cross-Platform: Works on Windows, Linux, and macOS.
+
+For a full user guide, see the project wiki: https://github.com/Udayraj123/OMRChecker/wiki
+
+---
+
+How the Repository Works
+------------------------
+1. Input Structure
+   - Place your OMR images and a corresponding template.json (and optionally config.json) in an input directory.
+   - The template defines the layout, question blocks, and pre-processing steps for your specific OMR sheet.
+
+2. Running OMRChecker
+   - Run the main script:
+     python main.py --inputDir path/to/your/input
+   - For layout configuration and visual feedback, use:
+     python main.py --setLayout
+
+3. Template System
+   - Each OMR layout is described by a template.json file, which specifies:
+     - Page and bubble dimensions
+     - Field blocks (groups of questions or fields)
+     - Pre-processing steps (e.g., cropping, alignment)
+     - Custom labels (for grouping or output formatting)
+   - The template system is highly flexible, supporting:
+     - Multiple question types (MCQ, integer, yes/no, etc.)
+     - Custom pre-processing (marker-based cropping, feature-based alignment, blurring, etc.)
+
+4. Processing Pipeline
+   - Pre-processing: Images are optionally cropped, aligned, or enhanced based on the template.
+   - Detection: Bubbles are detected and interpreted according to the field blocks.
+   - Output: Results are saved as CSV and visual debug images.
+
+---
+
+Display Window Auto-Adjustment
+-----------------------------
+Motivation
+To ensure the template layout and debug windows fit any screen size, OMRChecker now supports automatic adjustment of display dimensions.
+
+Implementation
+- The script create_screen_config.py detects your primary monitor's resolution and generates an optimal config.json:
+  - Uses 80% of screen width and 70% of height for the display window.
+  - Ensures minimum usable size (at least 800x600 pixels).
+- The generated config.json includes:
+  - display_width and display_height for window sizing
+  - Processing and output parameters
+
+Example Usage
+python create_screen_config.py
+- Follow the prompts to generate or overwrite config.json.
+- Place the resulting config.json in your input directory.
+- Run OMRChecker with --setLayout to see the template layout window auto-fit your screen.
+
+Manual Configuration
+You may also manually create a config.json with custom dimensions:
+{
+  "dimensions": {
+    "display_width": 1200,
+    "display_height": 800,
+    "processing_height": 820,
+    "processing_width": 666
+  },
+  "outputs": {
+    "show_image_level": 5
+  }
+}
+
+---
+
+"inputs/Tester with markers" Sample Folder
+------------------------------------------
+This folder provides a complete, ready-to-run example for OMR sheet processing using marker-based cropping and a custom template. It is ideal for understanding how to configure and test OMRChecker with your own layouts.
+
+Folder Contents
+- final.jpeg: A sample OMR sheet image containing 40 multiple-choice questions, with visible markers for alignment.
+- omr_marker.jpg: The marker image used by the system to detect and crop the OMR sheet accurately, even if the scan or photo is misaligned.
+- template.json: The template file describing the layout, question blocks, and pre-processing steps for this sample.
+- config.json: Configuration file specifying display and processing dimensions, ensuring the template layout window fits your screen.
+- evaluation.json: Contains the answer key and marking scheme for evaluating the sample sheet.
+
+template.json: Layout and Preprocessing
+{
+  "pageDimensions": [1400, 1900],
+  "bubbleDimensions": [123, 39],
+  "fieldBlocks": {
+    "MCQBlock_Left": {
+      "fieldType": "QTYPE_MCQ4",
+      "origin": [144, 110],
+      "fieldLabels": ["q1..20"],
+      "bubblesGap": 110,
+      "labelsGap": 90
+    },
+    "MCQBlock_Right": {
+      "fieldType": "QTYPE_MCQ4",
+      "origin": [889, 112],
+      "fieldLabels": ["q21..40"],
+      "bubblesGap": 110,
+      "labelsGap": 90
+    }
+  },
+  "preProcessors": [
+    {"name": "CropPage", "options": {"morphKernel": [10, 10]}},
+    {"name": "CropOnMarkers", "options": {"relativePath": "omr_marker.jpg", "sheetToMarkerWidthRatio": 17}}
+  ]
+}
+
+Explanation
+- pageDimensions: The image is resized to 1400x1900 pixels before processing.
+- bubbleDimensions: Each answer bubble is expected to be 123x39 pixels.
+- fieldBlocks: Two blocks of 20 MCQ questions each (left and right), with 4 options per question.
+- preProcessors:
+  - CropPage: Performs a morphological crop to focus on the main content.
+  - CropOnMarkers: Uses omr_marker.jpg to detect and align the sheet, ensuring robust cropping even for skewed or rotated images.
+
+config.json: Display and Processing Settings
+{
+  "dimensions": {
+    "display_height": 2480,
+    "display_width": 1640,
+    "processing_height": 820,
+    "processing_width": 666
+  },
+  "outputs": {
+    "show_image_level": 5
+  }
+}
+- dimensions: Controls the size of the display and processing windows, ensuring the template layout fits your screen.
+- outputs.show_image_level: Enables detailed visual feedback for debugging and template setup.
+
+evaluation.json: Answer Key and Marking Scheme
+{
+  "source_type": "custom",
+  "options": {
+    "questions_in_order": ["q1", ..., "q40"],
+    "answers_in_order": ["A", ..., "A"],
+    "should_explain_scoring": true
+  },
+  "marking_schemes": {
+    "DEFAULT": {
+      "correct": "1",
+      "incorrect": "0",
+      "unmarked": "0"
+    }
+  }
+}
+- questions_in_order: Lists all 40 questions in sequence.
+- answers_in_order: Specifies the correct answer for each question (all "A" in this sample).
+- marking_schemes: Defines the scoring: 1 point for correct, 0 for incorrect or unmarked.
+
+How the System Works with This Folder
+1. Preprocessing: The image is first cropped using morphological operations, then precisely aligned and cropped using the provided marker image.
+2. Detection: The system locates and interprets the answer bubbles as defined in the template.
+3. Evaluation: Detected answers are compared to the answer key in evaluation.json and scored according to the marking scheme.
+4. Visualization: The process and results are displayed in a window sized according to config.json, ensuring optimal fit on your screen.
+
+Customization
+To adapt this sample for your own OMR sheets:
+- Replace final.jpeg with your scanned or photographed sheet.
+- Update omr_marker.jpg if your sheet uses a different marker.
+- Edit template.json to match your sheet's layout and question structure.
+- Adjust config.json for your display if needed.
+- Update evaluation.json with your answer key and marking scheme.
+
+This folder serves as a practical template for setting up and validating your own OMR processing pipeline with OMRChecker.
+
+---
+
+For further details, see the User Guide and explore the sample folders for more template examples. 
+Repo link: https://github.com/Rahib50/OMRChecker
